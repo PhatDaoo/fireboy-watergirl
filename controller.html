@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tay Cầm - Fireboy & Watergirl</title>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background-color: #1a1a1a; color: white; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden; }
+        #setup { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .player-btns { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 300px; margin-top: 20px; }
+        .player-btn { padding: 25px 20px; font-size: 20px; font-weight: bold; border-radius: 12px; color: white; border: none; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: all 0.2s; }
+        .player-btn:active { transform: scale(0.95); }
+        
+        #pbtn-1 { background-color: #F44336; } /* Fireboy - Red */
+        #pbtn-2 { background-color: #2196F3; } /* Watergirl - Blue */
+        
+        .player-btn.taken { background-color: #555 !important; color: #888; cursor: not-allowed; box-shadow: none; transform: none; }
+        .player-btn.taken::after { content: " (Đã có người chọn)"; font-size: 14px; display: block; margin-top: 5px; }
+        
+        #gamepad { display: none; flex: 1; position: relative; }
+        #top-bar { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 200; }
+        #settings-btn, #leave-btn { background: #444; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        #leave-btn { background: #E53935; }
+        
+        #player-label { position: absolute; width: 100%; text-align: center; top: 20px; font-size: 22px; font-weight: bold; letter-spacing: 2px; pointer-events: none; }
+        
+        #edit-panel { display: none; position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); padding: 15px 25px; border-radius: 10px; z-index: 300; color: white; text-align: center; border: 2px solid #fff; }
+        #edit-panel input[type=range] { width: 150px; margin: 10px 0; accent-color: #fff; }
+        #edit-panel button { background: #555; color: white; border: none; padding: 8px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 16px; }
+
+        .draggable-group { position: absolute; transform-origin: center center; touch-action: none; }
+        
+        /* Direction Buttons Position */
+        #btn-left-group { left: 10%; top: 60%; width: 90px; height: 90px; }
+        #btn-right-group { left: 35%; top: 60%; width: 90px; height: 90px; }
+        
+        /* Jump Button Position */
+        #btn-jump-group { left: 75%; top: 55%; width: 100px; height: 100px; }
+        
+        body.edit-mode .draggable-group { border: 2px dashed rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); border-radius: 50%; }
+        body.edit-mode .draggable-group.selected { border: 2px solid #fff; background: rgba(255, 255, 255, 0.2); }
+        body.edit-mode .btn { pointer-events: none; }
+
+        .btn { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 24px; text-transform: uppercase; box-sizing: border-box; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        
+        #connection-status { margin-top: 20px; color: #ffeb3b; font-weight: bold; text-align: center; padding: 0 20px;}
+    </style>
+</head>
+<body>
+    <div id="setup">
+        <h2 style="margin-bottom: 10px;">🎮 TAY CẦM</h2>
+        <div id="connection-status">Đang kết nối tới Game...</div>
+        <div class="player-btns" id="player-btns" style="opacity: 0.5; pointer-events: none;">
+            <button class="player-btn" id="pbtn-1" onclick="selectPlayer(1)">🔥 FIREBOY</button>
+            <button class="player-btn" id="pbtn-2" onclick="selectPlayer(2)">💧 WATERGIRL</button>
+        </div>
+    </div>
+
+    <div id="gamepad">
+        <div id="top-bar">
+            <button id="settings-btn" onclick="toggleEditMode()">⚙️ Bố cục</button>
+            <button id="leave-btn" onclick="location.reload()">Thoát</button>
+        </div>
+        
+        <div id="edit-panel">
+            <h4>Kéo nút để di chuyển</h4>
+            <h4>Chỉnh Kích Thước:</h4>
+            <input type="range" id="size-slider" min="0.5" max="2.5" step="0.1" value="1"><br>
+            <button onclick="toggleEditMode()">Lưu & Hoàn tất</button>
+        </div>
+
+        <div id="player-label"></div>
+        
+        <!-- Left Button -->
+        <div class="draggable-group" id="btn-left-group" data-scale="1">
+            <div class="btn action-btn" id="btn-left" data-action="left">◀</div>
+        </div>
+        
+        <!-- Right Button -->
+        <div class="draggable-group" id="btn-right-group" data-scale="1">
+            <div class="btn action-btn" id="btn-right" data-action="right">▶</div>
+        </div>
+        
+        <!-- Jump Button (Up) -->
+        <div class="draggable-group" id="btn-jump-group" data-scale="1">
+            <div class="btn action-btn" id="btn-jump" data-action="up">NHẢY</div>
+        </div>
+    </div>
+
+    <script>
+        // --- WEBRTC CONTROLLER LOGIC ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const hostId = urlParams.get('host');
+        
+        let playerNum = null;
+        let conn = null;
+        
+        const statusEl = document.getElementById('connection-status');
+        const btnsEl = document.getElementById('player-btns');
+
+        if (!hostId) {
+            statusEl.innerText = '❌ Lỗi: Không tìm thấy Host ID. Vui lòng quét mã QR từ màn hình Game trên máy tính!';
+            statusEl.style.color = '#F44336';
+        } else {
+            const peer = new Peer();
+            peer.on('open', (id) => {
+                statusEl.innerText = 'Đang tìm kiếm Máy tính...';
+                conn = peer.connect(hostId);
+                
+                conn.on('open', () => {
+                    statusEl.innerText = '✅ Đã kết nối! Hãy chọn nhân vật:';
+                    statusEl.style.color = '#4CAF50';
+                    btnsEl.style.opacity = '1';
+                    btnsEl.style.pointerEvents = 'auto';
+                });
+
+                conn.on('data', (data) => {
+                    if (data.type === 'playersUpdate') {
+                        const taken = data.taken;
+                        for (let i = 1; i <= 2; i++) {
+                            const btn = document.getElementById(`pbtn-${i}`);
+                            if (taken.includes(i) && playerNum !== i) {
+                                btn.classList.add('taken'); btn.disabled = true;
+                            } else {
+                                btn.classList.remove('taken'); btn.disabled = false;
+                            }
+                        }
+                    } else if (data.type === 'requestPlayerResponse') {
+                        if (data.success) {
+                            playerNum = data.num;
+                            document.getElementById('setup').style.display = 'none';
+                            document.getElementById('gamepad').style.display = 'block';
+                            
+                            const playerColor = playerNum === 1 ? '#F44336' : '#2196F3';
+                            const playerName = playerNum === 1 ? '🔥 FIREBOY' : '💧 WATERGIRL';
+                            document.getElementById('player-label').innerText = playerName;
+                            document.getElementById('player-label').style.color = playerColor;
+                            
+                            // Tô màu các nút điều khiển theo nhân vật
+                            const btnColor = playerNum === 1 ? 'rgba(244, 67, 54, 0.5)' : 'rgba(33, 150, 243, 0.5)';
+                            document.getElementById('btn-jump').style.backgroundColor = btnColor;
+                            document.getElementById('btn-left').style.backgroundColor = btnColor;
+                            document.getElementById('btn-right').style.backgroundColor = btnColor;
+
+                            if (document.documentElement.requestFullscreen) {
+                                document.documentElement.requestFullscreen().catch(()=>{});
+                            }
+                            loadLayout();
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                });
+                
+                conn.on('close', () => {
+                    alert('Đã mất kết nối với máy tính! (Màn hình game đã bị đóng)');
+                    location.reload();
+                });
+                
+                peer.on('error', (err) => {
+                    statusEl.innerText = '❌ Lỗi kết nối P2P: ' + err.type;
+                    statusEl.style.color = '#F44336';
+                });
+            });
+        }
+
+        function selectPlayer(num) {
+            if (conn && conn.open) {
+                conn.send({ type: 'requestPlayer', num: num });
+            }
+        }
+
+        function sendAction(action, state) {
+            if (playerNum && !isEditMode && conn && conn.open) {
+                conn.send({ type: 'action', player: playerNum, action: action, state: state });
+            }
+        }
+
+        // --- Action Buttons (Left, Right, Jump) ---
+        const actionButtons = document.querySelectorAll('.action-btn');
+        actionButtons.forEach(btn => {
+            btn.addEventListener('touchstart', (e) => { if(isEditMode) return; e.preventDefault(); btn.style.transform = 'scale(0.9)'; sendAction(btn.dataset.action, 'pressed'); }, {passive: false});
+            btn.addEventListener('touchend', (e) => { if(isEditMode) return; e.preventDefault(); btn.style.transform = 'scale(1)'; sendAction(btn.dataset.action, 'released'); }, {passive: false});
+            btn.addEventListener('mousedown', (e) => { if(isEditMode) return; btn.style.transform = 'scale(0.9)'; sendAction(btn.dataset.action, 'pressed'); });
+            btn.addEventListener('mouseup', (e) => { if(isEditMode) return; btn.style.transform = 'scale(1)'; sendAction(btn.dataset.action, 'released'); });
+        });
+
+        // --- CUSTOMIZATION LOGIC ---
+        let isEditMode = false; let selectedGroup = null; let isDragging = false; let startX, startY, initialLeft, initialTop;
+        const slider = document.getElementById('size-slider'); const groups = document.querySelectorAll('.draggable-group');
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            if (isEditMode) {
+                document.body.classList.add('edit-mode'); document.getElementById('edit-panel').style.display = 'block';
+                document.getElementById('settings-btn').innerText = 'Hủy'; document.getElementById('settings-btn').style.background = '#888';
+                selectGroup(document.getElementById('btn-left-group'));
+            } else {
+                document.body.classList.remove('edit-mode'); document.getElementById('edit-panel').style.display = 'none';
+                document.getElementById('settings-btn').innerText = '⚙️ Bố cục'; document.getElementById('settings-btn').style.background = '#444';
+                if (selectedGroup) { selectedGroup.classList.remove('selected'); selectedGroup = null; }
+                saveLayout();
+            }
+        }
+
+        function selectGroup(group) {
+            if (selectedGroup) selectedGroup.classList.remove('selected');
+            selectedGroup = group; selectedGroup.classList.add('selected');
+            slider.value = parseFloat(group.dataset.scale || 1);
+        }
+
+        slider.addEventListener('input', (e) => { if (selectedGroup) { const scale = e.target.value; selectedGroup.dataset.scale = scale; selectedGroup.style.transform = `scale(${scale})`; } });
+
+        groups.forEach(group => { group.addEventListener('touchstart', dragStart, {passive: false}); group.addEventListener('mousedown', dragStart); });
+        document.addEventListener('touchmove', dragMove, {passive: false}); document.addEventListener('mousemove', dragMove);
+        document.addEventListener('touchend', () => isDragging = false); document.addEventListener('mouseup', () => isDragging = false);
+
+        function dragStart(e) {
+            if (!isEditMode) return; e.preventDefault(); selectGroup(this); isDragging = true;
+            startX = e.touches ? e.touches[0].clientX : e.clientX; startY = e.touches ? e.touches[0].clientY : e.clientY;
+            initialLeft = selectedGroup.offsetLeft; initialTop = selectedGroup.offsetTop;
+        }
+
+        function dragMove(e) {
+            if (!isDragging || !isEditMode || !selectedGroup) return; e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let newLeft = initialLeft + (clientX - startX); let newTop = initialTop + (clientY - startY);
+            selectedGroup.style.left = (newLeft / window.innerWidth * 100) + '%'; selectedGroup.style.top = (newTop / window.innerHeight * 100) + '%';
+        }
+
+        function saveLayout() { const layout = {}; groups.forEach(g => { layout[g.id] = { left: g.style.left, top: g.style.top, scale: g.dataset.scale }; }); localStorage.setItem('fwgLayout', JSON.stringify(layout)); }
+        function loadLayout() {
+            const saved = localStorage.getItem('fwgLayout');
+            if (saved) {
+                const layout = JSON.parse(saved);
+                groups.forEach(g => {
+                    if (layout[g.id]) {
+                        if (layout[g.id].left) g.style.left = layout[g.id].left;
+                        if (layout[g.id].top) g.style.top = layout[g.id].top;
+                        if (layout[g.id].scale) { g.dataset.scale = layout[g.id].scale; g.style.transform = `scale(${layout[g.id].scale})`; }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

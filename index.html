@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fireboy and Watergirl - WebRTC Multiplayer</title>
+    <!-- Nhúng Ruffle, PeerJS, QRCode -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background-color: #222;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        h1 {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .menu {
+            margin-bottom: 10px;
+            z-index: 10;
+        }
+        button.game-btn {
+            background-color: #444;
+            color: white;
+            border: 1px solid #666;
+            padding: 8px 15px;
+            margin: 0 5px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+        button.game-btn:hover { background-color: #666; }
+        button.game-btn.active {
+            background-color: #ff9900;
+            color: black;
+            font-weight: bold;
+        }
+        #ruffle-container {
+            width: 800px;
+            height: 600px;
+            background-color: black;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        ruffle-player { width: 100%; height: 100%; }
+
+        /* LOBBY UI */
+        #lobby {
+            position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.85);
+            border-radius: 8px; padding: 12px 15px; color: white; z-index: 100;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease;
+        }
+        #lobby-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;
+        }
+        #lobby-title { font-size: 14px; font-weight: bold; text-transform: uppercase; color: #4CAF50; }
+        #toggle-btn {
+            background: #333; color: white; border: 1px solid #555; border-radius: 4px;
+            padding: 2px 8px; font-size: 11px; cursor: pointer; transition: 0.2s;
+        }
+        #toggle-btn:hover { background: #555; }
+        #expanded-view { display: flex; gap: 20px; align-items: center; }
+        #lobby-left { display: flex; flex-direction: column; }
+        .slot { display: flex; align-items: center; margin-bottom: 8px; font-weight: bold; font-size: 13px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background: #555; box-shadow: 0 0 5px #000; }
+        .slot.connected .dot { background: #0f0; box-shadow: 0 0 8px #0f0; }
+        .slot.connected { color: #fff; }
+        .slot:not(.connected) { color: #888; }
+        #connect-info { font-size: 12px; color: #aaa; margin-top: 5px; border-top: 1px dashed #444; padding-top: 8px; }
+        #qr-container { background: white; padding: 5px; border-radius: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #qrcode { margin-top: 2px; }
+        #qr-text { color: black; font-size: 10px; font-weight: bold; text-align: center; }
+
+        /* Minimized State */
+        #minimized-view { display: none; font-size: 13px; font-weight: bold; padding: 5px 0; }
+        #lobby.minimized #expanded-view { display: none; }
+        #lobby.minimized #minimized-view { display: block; }
+        #lobby.minimized #lobby-header { margin-bottom: 0; border-bottom: none; padding-bottom: 0; gap: 15px; }
+        #lobby.minimized #lobby-title { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="lobby">
+        <div id="lobby-header">
+            <span id="lobby-title">🎮 Kết nối Điện thoại</span>
+            <button id="toggle-btn" onclick="toggleLobby()">➖ Thu nhỏ</button>
+        </div>
+        <div id="minimized-view">
+            <span id="mini-status">⏳ Đang tạo mã kết nối...</span>
+        </div>
+        <div id="expanded-view">
+            <div id="lobby-left">
+                <div id="slot-1" class="slot"><div class="dot"></div> Player 1 (Fireboy - Mũi tên)</div>
+                <div id="slot-2" class="slot"><div class="dot"></div> Player 2 (Watergirl - AWD)</div>
+                <div id="connect-info">Đang khởi tạo máy chủ WebRTC...</div>
+            </div>
+            <div id="qr-container" style="display: none;">
+                <div id="qr-text">Quét mã bằng ĐT</div>
+                <div id="qrcode"></div>
+            </div>
+        </div>
+    </div>
+
+    <h1>Fireboy & Watergirl Multiplayer</h1>
+    
+    <div class="menu">
+        <button id="btn-forest" class="game-btn active" onclick="loadGame('Forest Temple/FireBoyAndWaterGirl - ForestTemple.swf', 'btn-forest')">Forest Temple</button>
+        <button id="btn-light" class="game-btn" onclick="loadGame('Light Temple/FireBoyAndWaterGirl - Light Temple.swf', 'btn-light')">Light Temple</button>
+        <button id="btn-ice" class="game-btn" onclick="loadGame('Ice Temple/FireBoyAndWaterGirl - Ice Temple.swf', 'btn-ice')">Ice Temple</button>
+        <button id="btn-crystal" class="game-btn" onclick="loadGame('Crystal Temple/FireBoyAndWaterGirl - Crystal Temple.swf', 'btn-crystal')">Crystal Temple</button>
+    </div>
+
+    <div id="ruffle-container"></div>
+
+    <script>
+        // --- RUFFLE LOGIC ---
+        let player = null;
+
+        window.RufflePlayer = window.RufflePlayer || {};
+        window.RufflePlayer.config = {
+            "autoplay": "auto",
+            "unmuteOverlay": "visible",
+            "backgroundColor": "#000000",
+            "letterbox": "on"
+        };
+
+        window.addEventListener("load", (event) => {
+            loadGame("Forest Temple/FireBoyAndWaterGirl - ForestTemple.swf", "btn-forest");
+        });
+
+        function loadGame(swfPath, btnId) {
+            const container = document.getElementById("ruffle-container");
+            container.innerHTML = "";
+            const ruffle = window.RufflePlayer.newest();
+            player = ruffle.createPlayer();
+            container.appendChild(player);
+            player.load(encodeURI(swfPath));
+            
+            document.querySelectorAll('.menu button').forEach(btn => btn.classList.remove('active'));
+            if(btnId) document.getElementById(btnId).classList.add('active');
+        }
+
+        // --- LOBBY UI LOGIC ---
+        let isLobbyMinimized = false;
+        function toggleLobby() {
+            isLobbyMinimized = !isLobbyMinimized;
+            const lobby = document.getElementById('lobby');
+            const btn = document.getElementById('toggle-btn');
+            if (isLobbyMinimized) {
+                lobby.classList.add('minimized');
+                btn.innerText = '➕ Hiện mã QR';
+            } else {
+                lobby.classList.remove('minimized');
+                btn.innerText = '➖ Thu nhỏ';
+            }
+        }
+
+        // --- WEBRTC HOST LOGIC ---
+        const keyMap = {
+            1: { 
+                up: {code:'ArrowUp',key:'ArrowUp',keyCode:38}, 
+                left: {code:'ArrowLeft',key:'ArrowLeft',keyCode:37}, 
+                right: {code:'ArrowRight',key:'ArrowRight',keyCode:39} 
+            },
+            2: { 
+                up: {code:'KeyW',key:'w',keyCode:87}, 
+                left: {code:'KeyA',key:'a',keyCode:65}, 
+                right: {code:'KeyD',key:'d',keyCode:68} 
+            }
+        };
+
+        const peer = new Peer();
+        let connections = [];
+        let playerMap = {}; // peerId -> playerNum
+
+        peer.on('open', (id) => {
+            // Xác định URL của controller dựa trên URL hiện tại
+            let baseUrl = window.location.href.split('?')[0];
+            baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/'));
+            const controllerUrl = baseUrl + '/controller.html?host=' + id;
+            
+            document.getElementById('connect-info').innerText = '✅ Quét mã QR để điện thoại thành tay cầm';
+            document.getElementById('qr-container').style.display = 'flex';
+            
+            document.getElementById("qrcode").innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), {
+                text: controllerUrl,
+                width: 90, height: 90,
+                colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
+            });
+            updateLobbyUI();
+        });
+
+        function getTakenSlots() {
+            return Object.values(playerMap);
+        }
+
+        function broadcast(data) {
+            connections.forEach(conn => {
+                if (conn.open) conn.send(data);
+            });
+        }
+
+        peer.on('connection', (conn) => {
+            connections.push(conn);
+            
+            conn.on('open', () => {
+                conn.send({ type: 'playersUpdate', taken: getTakenSlots() });
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'requestPlayer') {
+                    const taken = getTakenSlots();
+                    if (taken.includes(data.num)) {
+                        conn.send({ type: 'requestPlayerResponse', success: false, message: 'Nhân vật này đã có người chơi!' });
+                    } else {
+                        for (let [pid, pNum] of Object.entries(playerMap)) {
+                            if (pid === conn.peer) delete playerMap[pid];
+                        }
+                        playerMap[conn.peer] = data.num;
+                        conn.send({ type: 'requestPlayerResponse', success: true, num: data.num });
+                        
+                        broadcast({ type: 'playersUpdate', taken: getTakenSlots() });
+                        updateLobbyUI();
+                    }
+                } else if (data.type === 'action') {
+                    const playerNum = playerMap[conn.peer];
+                    if (playerNum && data.player === playerNum) {
+                        simulateKey(playerNum, data.action, data.state);
+                    }
+                }
+            });
+
+            conn.on('close', () => {
+                if (playerMap[conn.peer]) {
+                    delete playerMap[conn.peer];
+                    broadcast({ type: 'playersUpdate', taken: getTakenSlots() });
+                    updateLobbyUI();
+                }
+                connections = connections.filter(c => c.peer !== conn.peer);
+            });
+        });
+
+        function updateLobbyUI() {
+            const takenSlots = getTakenSlots();
+            let miniText = [];
+            for(let i=1; i<=2; i++) {
+                const el = document.getElementById(`slot-${i}`);
+                if (takenSlots.includes(i)) {
+                    el.classList.add('connected');
+                    const charName = i === 1 ? 'Fireboy' : 'Watergirl';
+                    el.innerHTML = `<div class="dot"></div> Player ${i} (${charName}) - ĐÃ KẾT NỐI 📱`;
+                    miniText.push(`P${i}`);
+                } else {
+                    el.classList.remove('connected');
+                    const charName = i === 1 ? 'Fireboy' : 'Watergirl';
+                    el.innerHTML = `<div class="dot"></div> Player ${i} (${charName}) - Đang chờ...`;
+                }
+            }
+            
+            const miniStatus = document.getElementById('mini-status');
+            if (miniText.length > 0) {
+                miniStatus.innerHTML = `🎮 Đang chơi: <span style="color:#0f0">${miniText.join(', ')}</span>`;
+            } else {
+                miniStatus.innerHTML = `⏳ Chưa có điện thoại nào kết nối`;
+            }
+        }
+
+        function simulateKey(playerNum, action, state) {
+            const keyDef = keyMap[playerNum][action];
+            if (!keyDef) return;
+
+            const eventType = state === 'pressed' ? 'keydown' : 'keyup';
+            const event = new KeyboardEvent(eventType, {
+                key: keyDef.key, code: keyDef.code, keyCode: keyDef.keyCode, which: keyDef.keyCode,
+                bubbles: true, cancelable: true
+            });
+            // Ruffle lắng nghe event từ window
+            window.dispatchEvent(event);
+        }
+    </script>
+</body>
+</html>
