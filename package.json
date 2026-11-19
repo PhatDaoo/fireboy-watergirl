@@ -1,0 +1,10 @@
+{
+  "name": "fireboy-watergirl-native",
+  "version": "1.0.0",
+  "description": "Fireboy & Watergirl 1: Forest Temple - Native HTML5 Canvas & WebRTC Phone Controller Edition",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "extract": "python tools/extract_forest_temple.py"
+  }
+}

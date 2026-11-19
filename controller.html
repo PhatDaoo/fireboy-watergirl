@@ -60,7 +60,11 @@
     <div id="gamepad">
         <div id="top-bar">
             <button id="settings-btn" onclick="toggleEditMode()">⚙️ Bố cục</button>
-            <button id="leave-btn" onclick="location.reload()">Thoát</button>
+            <div style="display:flex; gap:8px;">
+                <button onclick="sendCommand('pause')" style="background:#555; color:white; border:none; padding:10px 14px; border-radius:8px; font-weight:bold; cursor:pointer;">⏸ Pause</button>
+                <button onclick="sendCommand('retry')" style="background:#555; color:white; border:none; padding:10px 14px; border-radius:8px; font-weight:bold; cursor:pointer;">🔄 Retry</button>
+                <button id="leave-btn" onclick="location.reload()">Thoát</button>
+            </div>
         </div>
         
         <div id="edit-panel">
@@ -177,13 +181,22 @@
             }
         }
 
+        function sendCommand(cmd) {
+            if (!isEditMode && conn && conn.open) {
+                conn.send({ type: 'command', command: cmd });
+            }
+        }
+
         // --- Action Buttons (Left, Right, Jump) ---
         const actionButtons = document.querySelectorAll('.action-btn');
         actionButtons.forEach(btn => {
+            const release = (e) => { if(isEditMode) return; if (e && e.cancelable) e.preventDefault(); btn.style.transform = 'scale(1)'; sendAction(btn.dataset.action, 'released'); };
             btn.addEventListener('touchstart', (e) => { if(isEditMode) return; e.preventDefault(); btn.style.transform = 'scale(0.9)'; sendAction(btn.dataset.action, 'pressed'); }, {passive: false});
-            btn.addEventListener('touchend', (e) => { if(isEditMode) return; e.preventDefault(); btn.style.transform = 'scale(1)'; sendAction(btn.dataset.action, 'released'); }, {passive: false});
+            btn.addEventListener('touchend', release, {passive: false});
+            btn.addEventListener('touchcancel', release, {passive: false});
             btn.addEventListener('mousedown', (e) => { if(isEditMode) return; btn.style.transform = 'scale(0.9)'; sendAction(btn.dataset.action, 'pressed'); });
-            btn.addEventListener('mouseup', (e) => { if(isEditMode) return; btn.style.transform = 'scale(1)'; sendAction(btn.dataset.action, 'released'); });
+            btn.addEventListener('mouseup', release);
+            btn.addEventListener('mouseleave', release);
         });
 
         // --- CUSTOMIZATION LOGIC ---
