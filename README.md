@@ -22,8 +22,8 @@ Phiên bản web thuần **HTML5 Canvas** tái hiện trọn vẹn cả **4 ph�
 - **JavaScript (ES6 Modules — `type="module"`)**: Toàn bộ engine game phía client (vòng lặp game, vật lý, raycasting ánh sáng, renderer Canvas 2D, âm thanh, nhập liệu, mạng WebRTC), máy chủ HTTP cục bộ Node.js (`server.js`), và script kiểm thử tự động (`tools/verify_engine.mjs`).
 - **HTML5**: Giao diện sân khấu game chính (`index.html`) và giao diện tay cầm cảm ứng trên điện thoại (`controller.html`).
 - **CSS3**: Bố cục sân khấu tỉ lệ `4:3` căn giữa không thanh công cụ thừa (`css/style.css`) và giao diện tay cầm cảm ứng hỗ trợ kéo/đổi kích thước nút.
-- **Python 3**: Bộ công cụ tiền xử lý & trích xuất dữ liệu nhị phân SWF (`DefineShape`, `DefineSprite`, `DefineButton2`, `SymbolClass`), mã ActionScript 3 (`Game.as`, `level.as`) và dữ liệu JSON (`Crystal Temple/binaryData/265_level_JsonData.bin`) sang các module `js/*_gamedata.js` (`tools/extract_forest_temple.py`, `tools/extract_all_temples.py`).
-- **ActionScript 3 (tham chiếu gốc)**: Mã nguồn decompiled trong `*/scripts/Game.as`, `level.as`, `ContactListener.as` làm chuẩn tham chiếu chính xác cho vật lý Box2D, tọa độ node bản đồ và âm thanh/hiệu ứng.
+- **Python 3**: Đã được dùng để tiền xử lý & trích xuất dữ liệu nhị phân SWF, ActionScript 3 (`Game.as`, `level.as`) và JSON sang các module `js/*_gamedata.js`.
+- **ActionScript 3 (chuẩn tham chiếu)**: Chuẩn logic vật lý Box2D, tọa độ node bản đồ và cơ chế gốc của 4 đền được port sang JavaScript.
 
 ---
 
@@ -78,7 +78,7 @@ Phiên bản web thuần **HTML5 Canvas** tái hiện trọn vẹn cả **4 ph�
 fireboy-watergirl/
 ├── index.html                  # Trang chính chứa Canvas 640x480 & WebRTC QR Lobby
 ├── controller.html             # Giao diện tay cầm cảm ứng cho điện thoại
-├── package.json                # Cấu hình scripts (`npm start`, `npm run extract`)
+├── package.json                # Cấu hình scripts (`npm start`, `npm run verify`)
 ├── server.js                   # Static HTTP server Node.js không phụ thuộc ngoài
 ├── css/
 │   └── style.css               # Bố cục toàn màn hình 4:3 & widget QR Lobby
@@ -96,13 +96,11 @@ fireboy-watergirl/
 │   ├── ice_gamedata.js         # Dữ liệu trích xuất Ice Temple (41 màn)
 │   └── crystal_gamedata.js     # Dữ liệu trích xuất Crystal Temple (41 màn)
 ├── tools/
-│   ├── extract_forest_temple.py # Script trích xuất SWF cho Forest Temple
-│   ├── extract_all_temples.py   # Script trích xuất SWF + JSON cho Light, Ice, Crystal
-│   └── verify_engine.mjs        # Script kiểm thử tự động toàn bộ 155 màn chơi
-├── Forest Temple/              # Tài nguyên SWF gốc trích xuất phần 1 (sprites, shapes, sounds...)
-├── Light Temple/               # Tài nguyên SWF gốc trích xuất phần 2
-├── Ice Temple/                 # Tài nguyên SWF gốc trích xuất phần 3
-└── Crystal Temple/             # Tài nguyên SWF gốc trích xuất phần 4 (kèm level JSON)
+│   └── verify_engine.mjs       # Script kiểm thử tự động toàn bộ 155 màn chơi
+├── Forest Temple/              # Tài nguyên runtime phần 1 (sprites, shapes, sounds, frames, images)
+├── Light Temple/               # Tài nguyên runtime phần 2 (sprites, shapes, buttons, sounds, frames)
+├── Ice Temple/                 # Tài nguyên runtime phần 3 (sprites, shapes, buttons, sounds, frames)
+└── Crystal Temple/             # Tài nguyên runtime phần 4 (sprites, shapes, sounds)
 ```
 
 ---
@@ -126,13 +124,9 @@ Mở trình duyệt tại `http://localhost:3000`. Nếu muốn dùng điện th
 - **Màn hình Intro**: Phím `1` `2` `3` `4` để chuyển nhanh giữa Forest / Light / Ice / Crystal Temple
 - **Trong màn chơi**: `P` hoặc `Esc` để Tạm dừng, `R` để Chơi lại nhanh, `Enter`/`Space` để Tiếp tục ở bảng tổng kết / Game Over
 
-### Kiểm thử & Trích xuất lại dữ liệu (tuỳ chọn)
+### Kiểm thử tự động
 - Kiểm tra toàn bộ 155 màn chơi bằng engine vật lý:
   ```bash
-  node tools/verify_engine.mjs
-  ```
-- Trích xuất lại file `*_gamedata.js` (yêu cầu Python 3):
-  ```bash
-  python tools/extract_forest_temple.py
-  python tools/extract_all_temples.py
+  npm run verify
+  # hoặc: node tools/verify_engine.mjs
   ```

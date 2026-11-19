@@ -1,3 +1,0 @@
-·       levels are very similar, but it's trick is to
---- RECORDSEPARATOR ---
- move both characters simultaneously.

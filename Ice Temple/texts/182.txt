@@ -1,5 +1,0 @@
-This is a timed button
---- RECORDSEPARATOR ---
-Hurry up before the 
---- RECORDSEPARATOR ---
-door closes!
