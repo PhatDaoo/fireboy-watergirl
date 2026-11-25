@@ -1,10 +1,11 @@
 {
-  "name": "fireboy-watergirl-native",
-  "version": "1.0.0",
-  "description": "Fireboy & Watergirl 1-4 - Native HTML5 Canvas & WebRTC Phone Controller Edition",
+  "name": "fireboy-watergirl-ruffle",
+  "version": "2.0.0",
+  "description": "Fireboy & Watergirl 1-4 (Forest, Light, Ice, Crystal) running original Flash SWFs via self-hosted Ruffle WebAssembly with WebRTC mobile controllers.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "verify": "node tools/verify_engine.mjs"
-  }
+    "patch-crystal": "python tools/patch_crystal_swf.py"
+  },
+  "license": "ISC"
 }

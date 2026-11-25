@@ -1,4 +1,4 @@
-// Zero-dependency Local Static HTTP Server for Fireboy & Watergirl Native HTML5
+// Zero-dependency Local Static HTTP Server for Fireboy & Watergirl (Ruffle Flash Edition)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -10,15 +10,18 @@ const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
     '.js': 'application/javascript; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8',
     '.json': 'application/json; charset=utf-8',
+    '.wasm': 'application/wasm',
+    '.swf': 'application/x-shockwave-flash',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
     '.mp3': 'audio/mpeg',
     '.wav': 'audio/wav',
-    '.ttf': 'font/ttf',
-    '.swf': 'application/x-shockwave-flash'
+    '.ttf': 'font/ttf'
 };
 
 const server = http.createServer((req, res) => {
@@ -48,7 +51,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`=============================================================`);
-    console.log(`  Fireboy & Watergirl Native HTML5 Server: http://localhost:${PORT}`);
-    console.log(`=============================================================`);
+    console.log(`================================================================`);
+    console.log(`  Fireboy & Watergirl (Ruffle Flash): http://localhost:${PORT}`);
+    console.log(`================================================================`);
 });

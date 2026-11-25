@@ -1,4 +1,4 @@
-/* Clean Full-Stage Layout (No External Menu) for Fireboy & Watergirl: Forest Temple */
+/* Fireboy & Watergirl — 4 Temples (Ruffle Flash Edition) */
 
 * {
     box-sizing: border-box;
@@ -7,7 +7,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #111;
+    background: radial-gradient(circle at top, #1f2229 0%, #0d0e12 100%);
     color: #f5f5f5;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
@@ -19,39 +19,147 @@ body {
     user-select: none;
 }
 
+#app-shell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: min(96vw, calc((96vh - 82px) * 4 / 3));
+    max-width: 960px;
+}
+
+/* TOP TEMPLE SWITCHER BAR */
+#temple-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(18, 20, 26, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.temple-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.temple-btn {
+    background: #23262f;
+    color: #d7dce5;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.temple-btn:hover {
+    background: #303542;
+    color: #fff;
+}
+
+.temple-btn.active[data-temple="forest"] {
+    background: linear-gradient(135deg, #2e7d32, #43a047);
+    border-color: #81c784;
+    color: #fff;
+}
+
+.temple-btn.active[data-temple="light"] {
+    background: linear-gradient(135deg, #b8860b, #e0a800);
+    border-color: #ffe082;
+    color: #111;
+}
+
+.temple-btn.active[data-temple="ice"] {
+    background: linear-gradient(135deg, #0277bd, #29b6f6);
+    border-color: #81d4fa;
+    color: #fff;
+}
+
+.temple-btn.active[data-temple="crystal"] {
+    background: linear-gradient(135deg, #6a1b9a, #ab47bc);
+    border-color: #ce93d8;
+    color: #fff;
+}
+
+.temple-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.action-btn {
+    background: #23262f;
+    color: #cfd6e0;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.action-btn:hover {
+    background: #353a47;
+    color: #fff;
+}
+
 /* STAGE CONTAINER: 4:3 aspect ratio centered cleanly */
 #stage-wrapper {
     position: relative;
-    width: min(96vw, calc(96vh * 4 / 3));
-    height: min(96vh, calc(96vw * 3 / 4));
-    max-width: 960px;
-    max-height: 720px;
+    width: 100%;
+    aspect-ratio: 4 / 3;
     background: #000;
     box-shadow: 0 0 28px rgba(0, 0, 0, 0.9);
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-#game-canvas {
+#ruffle-container,
+#ruffle-container ruffle-player {
     width: 100%;
     height: 100%;
     display: block;
 }
 
-/* FLOATING WEBRTC QR PHONE LOBBY */
+#controls-hint {
+    font-size: 12px;
+    color: #9ea7b8;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#controls-hint .sep {
+    opacity: 0.45;
+}
+
+/* FLOATING WEBRTC QR PHONE LOBBY (Hidden when minimized so it never blocks temple buttons) */
 #lobby {
     position: fixed;
-    top: 10px;
-    left: 10px;
-    background: rgba(14, 17, 10, 0.88);
-    border-radius: 8px;
-    padding: 10px 14px;
+    top: 56px;
+    right: 16px;
+    background: rgba(14, 17, 22, 0.96);
+    border-radius: 10px;
+    padding: 12px 14px;
     color: white;
     z-index: 100;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
-    transition: all 0.25s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+}
+
+#lobby.minimized {
+    display: none;
 }
 
 #lobby-header {
@@ -71,7 +179,7 @@ body {
     color: #4caf50;
 }
 
-#toggle-btn {
+#close-lobby-btn {
     background: #2c2c2c;
     color: #fff;
     border: 1px solid #555;
@@ -81,7 +189,7 @@ body {
     cursor: pointer;
 }
 
-#toggle-btn:hover {
+#close-lobby-btn:hover {
     background: #444;
 }
 

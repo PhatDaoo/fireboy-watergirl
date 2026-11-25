@@ -3,26 +3,63 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fireboy & Watergirl 1: Forest Temple</title>
+    <title>Fireboy &amp; Watergirl — 4 Temples (Ruffle Flash)</title>
     <link rel="stylesheet" href="css/style.css" />
-    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        window.RufflePlayer = window.RufflePlayer || {};
+        window.RufflePlayer.config = {
+            publicPath: 'vendor/ruffle/',
+            autoplay: 'on',
+            unmuteOverlay: 'hidden',
+            backgroundColor: '#000000',
+            letterbox: 'on',
+            quality: 'high',
+            splashScreen: false,
+            warnOnUnsupportedContent: false,
+            contextMenu: 'rightClickOnly',
+            allowScriptAccess: false
+        };
+    </script>
+    <script src="vendor/ruffle/ruffle.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
 <body>
+    <main id="app-shell">
+        <!-- TOP TEMPLE SWITCHER BAR (Outside 4:3 stage so it never overlaps in-game UI) -->
+        <header id="temple-bar" role="navigation" aria-label="Chọn phần chơi">
+            <div class="temple-tabs">
+                <button class="temple-btn" data-temple="forest">1. Forest</button>
+                <button class="temple-btn" data-temple="light">2. Light</button>
+                <button class="temple-btn" data-temple="ice">3. Ice</button>
+                <button class="temple-btn" data-temple="crystal">4. Crystal</button>
+            </div>
+            <div class="temple-actions">
+                <button id="toggle-btn" class="action-btn" type="button" title="Kết nối tay cầm điện thoại qua QR">📱 Tay cầm</button>
+                <button id="btn-reload" class="action-btn" title="Tải lại đền hiện tại">↻ Tải lại</button>
+                <button id="btn-fullscreen" class="action-btn" title="Toàn màn hình">⛶ Full</button>
+            </div>
+        </header>
 
-    <!-- NATIVE HTML5 CANVAS (Authentic 640x480 SWF Stage scaled cleanly) -->
-    <div id="stage-wrapper">
-        <canvas id="game-canvas" width="640" height="480"></canvas>
-    </div>
+        <!-- RUFFLE FLASH STAGE (Authentic 4:3 aspect ratio) -->
+        <div id="stage-wrapper">
+            <div id="ruffle-container"></div>
+        </div>
 
-    <!-- WEBRTC PHONE CONTROLLER LOBBY (Floating corner widget, collapsible) -->
+        <footer id="controls-hint">
+            <span>🔥 <b>Fireboy</b>: Phím Mũi tên (← ↑ →)</span>
+            <span class="sep">•</span>
+            <span>💧 <b>Watergirl</b>: W / A / D</span>
+            <span class="sep">•</span>
+            <span id="mini-status">📱 Quét QR để kết nối tay cầm</span>
+        </footer>
+    </main>
+
+    <!-- WEBRTC PHONE CONTROLLER LOBBY (Collapsible popup, never overlaps top bar) -->
     <div id="lobby" class="minimized">
         <div id="lobby-header">
             <span id="lobby-title">🎮 Tay cầm Điện thoại (WebRTC)</span>
-            <button id="toggle-btn" onclick="toggleLobby()">➕ Hiện mã QR</button>
-        </div>
-        <div id="minimized-view">
-            <span id="mini-status">📱 Quét QR để kết nối tay cầm</span>
+            <button id="close-lobby-btn" type="button">✕</button>
         </div>
         <div id="expanded-view">
             <div id="lobby-left">
@@ -37,21 +74,6 @@
         </div>
     </div>
 
-    <script>
-        let isLobbyMinimized = true;
-        function toggleLobby() {
-            isLobbyMinimized = !isLobbyMinimized;
-            const lobby = document.getElementById('lobby');
-            const btn = document.getElementById('toggle-btn');
-            if (isLobbyMinimized) {
-                lobby.classList.add('minimized');
-                btn.innerText = '➕ Hiện mã QR';
-            } else {
-                lobby.classList.remove('minimized');
-                btn.innerText = '➖ Thu nhỏ';
-            }
-        }
-    </script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
